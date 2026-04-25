@@ -1,0 +1,1377 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistem Absensi Siswa SMK - Face Recognition</title>
+    <link href="https://cdn.jsdelivr.net/npm/fontsource-inter@5.0.0/400.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fontsource-inter@5.0.0/600.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/fontsource-inter@5.0.0/700.css" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Inter', sans-serif; background: #f0f2f5; color: #1a1a2e; min-height: 100vh; }
+
+        .app-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px 30px;
+            box-shadow: 0 4px 20px rgba(102,126,234,0.4);
+            position: sticky; top: 0; z-index: 100;
+        }
+        .app-header h1 { font-size: 1.5rem; font-weight: 700; }
+        .app-header p { font-size: 0.85rem; opacity: 0.9; margin-top: 4px; }
+
+        .nav-tabs {
+            display: flex; gap: 8px; padding: 16px 30px;
+            background: white; border-bottom: 1px solid #e2e8f0;
+            overflow-x: auto; flex-wrap: wrap;
+        }
+        .nav-tab {
+            padding: 10px 20px; border-radius: 10px; border: none;
+            background: #f1f5f9; color: #64748b; font-weight: 600;
+            font-size: 0.85rem; cursor: pointer; transition: all 0.3s;
+            white-space: nowrap; font-family: 'Inter', sans-serif;
+        }
+        .nav-tab:hover { background: #e2e8f0; }
+        .nav-tab.active {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; box-shadow: 0 4px 15px rgba(102,126,234,0.3);
+        }
+
+        .main-content { max-width: 1400px; margin: 0 auto; padding: 24px; }
+        .page { display: none; }
+        .page.active { display: block; }
+
+        .card {
+            background: white; border-radius: 16px; padding: 24px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06); margin-bottom: 20px;
+        }
+        .card-title { font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; color: #1e293b; }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+        .grid-6 { display: grid; grid-template-columns: repeat(6, 1fr); gap: 12px; }
+        @media (max-width: 1200px) { .grid-6 { grid-template-columns: repeat(3, 1fr); } }
+        @media (max-width: 768px) { .grid-6 { grid-template-columns: repeat(2, 1fr); } .grid-3 { grid-template-columns: 1fr; } .grid-2 { grid-template-columns: 1fr; } }
+
+        .stat-card {
+            background: white; border-radius: 16px; padding: 16px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06); text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s; border-left: 4px solid transparent;
+        }
+        .stat-card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .stat-card.total { border-left-color: #667eea; }
+        .stat-card.hadir { border-left-color: #10b981; }
+        .stat-card.terlambat { border-left-color: #f59e0b; }
+        .stat-card.izin { border-left-color: #3b82f6; }
+        .stat-card.sakit { border-left-color: #ec4899; }
+        .stat-card.belum { border-left-color: #94a3b8; }
+        .stat-number { font-size: 1.8rem; font-weight: 700; color: #1e293b; }
+        .stat-label { font-size: 0.8rem; color: #64748b; margin-top: 4px; font-weight: 600; }
+
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 0.85rem; font-weight: 600; color: #475569; margin-bottom: 6px; }
+        .form-input, .form-select {
+            width: 100%; padding: 12px 16px; border: 2px solid #e2e8f0;
+            border-radius: 10px; font-size: 0.9rem; font-family: 'Inter', sans-serif;
+            transition: border-color 0.3s; background: white; color: #1e293b;
+        }
+        .form-input:focus, .form-select:focus { outline: none; border-color: #667eea; }
+
+        .btn {
+            padding: 12px 24px; border-radius: 10px; border: none;
+            font-weight: 600; font-size: 0.85rem; cursor: pointer;
+            transition: all 0.3s; font-family: 'Inter', sans-serif;
+            display: inline-flex; align-items: center; gap: 8px;
+        }
+        .btn-primary { background: linear-gradient(135deg, #667eea, #764ba2); color: white; box-shadow: 0 4px 15px rgba(102,126,234,0.3); }
+        .btn-primary:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(102,126,234,0.4); }
+        .btn-success { background: #10b981; color: white; }
+        .btn-success:hover { background: #059669; }
+        .btn-danger { background: #ef4444; color: white; }
+        .btn-danger:hover { background: #dc2626; }
+        .btn-warning { background: #f59e0b; color: white; }
+        .btn-blue { background: #3b82f6; color: white; }
+        .btn-blue:hover { background: #2563eb; }
+        .btn-pink { background: #ec4899; color: white; }
+        .btn-pink:hover { background: #db2777; }
+        .btn-secondary { background: #e2e8f0; color: #475569; }
+        .btn-secondary:hover { background: #cbd5e1; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { padding: 12px 16px; text-align: left; border-bottom: 1px solid #f1f5f9; font-size: 0.85rem; }
+        th { background: #f8fafc; font-weight: 700; color: #64748b; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; }
+        tr:hover { background: #f8fafc; }
+
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; display: inline-block; }
+        .badge-x { background: #dbeafe; color: #2563eb; }
+        .badge-xi { background: #dcfce7; color: #16a34a; }
+        .badge-xii { background: #fef3c7; color: #d97706; }
+        .badge-hadir { background: #dcfce7; color: #16a34a; }
+        .badge-terlambat { background: #fef3c7; color: #d97706; }
+        .badge-izin { background: #dbeafe; color: #2563eb; }
+        .badge-sakit { background: #fce7f3; color: #db2777; }
+
+        .camera-container {
+            position: relative; width: 100%; max-width: 640px;
+            margin: 0 auto; border-radius: 16px; overflow: hidden;
+            background: #1e293b; aspect-ratio: 4/3;
+        }
+        .camera-container video, .camera-container canvas { width: 100%; height: 100%; object-fit: cover; }
+        #cameraCanvas { position: absolute; top: 0; left: 0; }
+
+        .scan-line {
+            position: absolute; top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, transparent, #667eea, transparent);
+            animation: scan 2s linear infinite;
+        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+
+        .preview-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .preview-img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 8px; border: 2px solid #e2e8f0; }
+
+        .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; }
+        .empty-state svg { width: 80px; height: 80px; margin-bottom: 16px; opacity: 0.5; }
+        .empty-state p { font-size: 0.9rem; }
+
+        .attendance-log { max-height: 450px; overflow-y: auto; padding-right: 8px; }
+        .log-item {
+            display: flex; align-items: center; gap: 12px; padding: 12px;
+            border-bottom: 1px solid #f1f5f9; animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+        .log-avatar {
+            width: 40px; height: 40px; border-radius: 50%;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 700; font-size: 1rem; flex-shrink: 0;
+        }
+        .log-info { flex: 1; }
+        .log-name { font-weight: 600; font-size: 0.9rem; }
+        .log-time { font-size: 0.75rem; color: #94a3b8; }
+        .log-status { font-size: 0.7rem; font-weight: 600; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5); display: none; align-items: center;
+            justify-content: center; z-index: 1000; backdrop-filter: blur(4px);
+        }
+        .modal-overlay.active { display: flex; }
+        .modal {
+            background: white; border-radius: 20px; padding: 32px;
+            max-width: 550px; width: 90%; max-height: 90vh; overflow-y: auto;
+            animation: modalIn 0.3s ease;
+        }
+        @keyframes modalIn { from { opacity: 0; transform: scale(0.9) translateY(20px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+        .modal-title { font-size: 1.2rem; font-weight: 700; margin-bottom: 20px; }
+
+        .capture-area {
+            position: relative; border-radius: 12px; overflow: hidden;
+            background: #1e293b; aspect-ratio: 4/3; margin-bottom: 16px;
+        }
+        .capture-area video { width: 100%; height: 100%; object-fit: cover; }
+        .capture-area canvas { position: absolute; top: 0; left: 0; }
+
+        .status-indicator { display: inline-flex; align-items: center; gap: 6px; font-size: 0.8rem; font-weight: 600; }
+        .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .status-dot.active { background: #10b981; animation: blink 1s infinite; }
+        .status-dot.inactive { background: #ef4444; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+        .toast-container { position: fixed; top: 80px; right: 20px; z-index: 2000; display: flex; flex-direction: column; gap: 8px; }
+        .toast {
+            padding: 14px 20px; border-radius: 12px; color: white;
+            font-size: 0.85rem; font-weight: 600; animation: toastIn 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15); max-width: 350px;
+        }
+        .toast.success { background: #10b981; }
+        .toast.error { background: #ef4444; }
+        .toast.info { background: #667eea; }
+        .toast.warning { background: #f59e0b; }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(100px); } to { opacity: 1; transform: translateX(0); } }
+
+        .filter-bar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
+        .filter-bar .form-input, .filter-bar .form-select { width: auto; min-width: 140px; }
+
+        .progress-bar { width: 100%; height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #667eea, #764ba2); border-radius: 3px; transition: width 0.5s ease; }
+
+        .face-training-status { display: flex; align-items: center; gap: 12px; padding: 16px; background: #f8fafc; border-radius: 12px; margin-bottom: 16px; }
+
+        .summary-grid { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 20px; }
+        .summary-item { flex: 1; min-width: 90px; padding: 12px; border-radius: 10px; text-align: center; }
+        .summary-item.hadir { background: #dcfce7; }
+        .summary-item.terlambat { background: #fef3c7; }
+        .summary-item.izin { background: #dbeafe; }
+        .summary-item.sakit { background: #fce7f3; }
+        .summary-item .count { font-size: 1.5rem; font-weight: 700; }
+        .summary-item .label { font-size: 0.7rem; font-weight: 600; opacity: 0.8; }
+
+        .notes-text { font-size: 0.75rem; color: #64748b; font-style: italic; margin-top: 4px; }
+        
+        /* Toggle Switch */
+        .toggle-switch {
+            display: flex; align-items: center; gap: 10px; cursor: pointer; user-select: none;
+        }
+        .toggle-input { display: none; }
+        .toggle-label {
+            width: 44px; height: 24px; background: #cbd5e1; border-radius: 20px; position: relative; transition: 0.3s;
+        }
+        .toggle-label::after {
+            content: ''; position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%;
+            top: 3px; left: 3px; transition: 0.3s; box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .toggle-input:checked + .toggle-label { background: #667eea; }
+        .toggle-input:checked + .toggle-label::after { left: 23px; }
+    </style>
+</head>
+<body>
+
+<div class="app-header">
+    <h1>📚 Sistem Absensi SMK</h1>
+    <p>Face Recognition Attendance System - Kelas X, XI & XII</p>
+</div>
+
+<div class="nav-tabs">
+    <button class="nav-tab active" onclick="showPage('dashboard')">📊 Dashboard</button>
+    <button class="nav-tab" onclick="showPage('absensi')">📷 Absensi</button>
+    <button class="nav-tab" onclick="showPage('siswa')">👥 Data Siswa</button>
+    <button class="nav-tab" onclick="showPage('riwayat')">📋 Riwayat</button>
+    <button class="nav-tab" onclick="showPage('laporan')">📈 Laporan</button>
+</div>
+
+<div class="main-content">
+    <!-- DASHBOARD -->
+    <div id="page-dashboard" class="page active">
+        <div class="grid-6" id="stats-grid">
+            <div class="stat-card total">
+                <div class="stat-number" id="stat-total">0</div>
+                <div class="stat-label">Total Siswa</div>
+            </div>
+            <div class="stat-card hadir">
+                <div class="stat-number" id="stat-hadir">0</div>
+                <div class="stat-label">Hadir</div>
+            </div>
+            <div class="stat-card terlambat">
+                <div class="stat-number" id="stat-terlambat">0</div>
+                <div class="stat-label">Terlambat</div>
+            </div>
+            <div class="stat-card izin">
+                <div class="stat-number" id="stat-izin">0</div>
+                <div class="stat-label">Izin</div>
+            </div>
+            <div class="stat-card sakit">
+                <div class="stat-number" id="stat-sakit">0</div>
+                <div class="stat-label">Sakit</div>
+            </div>
+            <div class="stat-card belum">
+                <div class="stat-number" id="stat-belum">0</div>
+                <div class="stat-label">Belum Absen</div>
+            </div>
+        </div>
+
+        <div class="grid-2" style="margin-top: 20px;">
+            <div class="card">
+                <div class="card-title">📅 Absensi Hari Ini</div>
+                <div class="attendance-log" id="today-attendance-log">
+                    <div class="empty-state"><p>Belum ada absensi hari ini</p></div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title">📊 Distribusi Kelas</div>
+                <div id="class-distribution"></div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-title">🔧 Status Sistem</div>
+            <div class="face-training-status">
+                <div class="status-dot" id="model-status-dot"></div>
+                <div>
+                    <div style="font-weight: 600; font-size: 0.9rem;" id="model-status-text">Memuat model...</div>
+                    <div style="font-size: 0.8rem; color: #94a3b8;" id="model-status-desc">Mohon tunggu sebentar</div>
+                </div>
+            </div>
+            <div class="progress-bar"><div class="progress-fill" id="model-progress" style="width: 0%"></div></div>
+            <div style="margin-top: 12px; font-size: 0.8rem; color: #64748b;">
+                Jumlah siswa terdaftar: <strong id="registered-count">0</strong> |
+                Database wajah: <strong id="face-db-count">0</strong>
+            </div>
+        </div>
+    </div>
+
+    <!-- ABSENSI -->
+    <div id="page-absensi" class="page">
+        <div class="grid-2">
+            <div>
+                <div class="card">
+                    <div class="card-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>📷 Kamera Absensi</span>
+                        <div class="status-indicator">
+                            <div class="status-dot" id="camera-status-dot"></div>
+                            <span id="camera-status-text">Kamera Mati</span>
+                        </div>
+                    </div>
+                    <div class="camera-container" id="cameraContainer">
+                        <video id="cameraVideo" autoplay muted playsinline></video>
+                        <canvas id="cameraCanvas"></canvas>
+                        <div class="scan-line" id="scanLine" style="display:none;"></div>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap;">
+                        <button class="btn btn-primary" id="btnStartCamera" onclick="startCamera()">▶️ Mulai Kamera</button>
+                        <button class="btn btn-danger" id="btnStopCamera" onclick="stopCamera()" disabled>⏹️ Stop Kamera</button>
+                        <button class="btn btn-warning" onclick="openManualAttendanceModal()">📝 Input Izin/Sakit</button>
+                    </div>
+                    
+                    <div style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 16px;">
+                        <div class="form-group">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="soundToggle" class="toggle-input" checked>
+                                <div class="toggle-label"></div>
+                                <span style="font-size: 0.9rem; font-weight: 600;">🔊 Aktifkan Suara Notifikasi</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div style="margin-top: 12px; font-size: 0.8rem; color: #94a3b8;">
+                        <span id="detection-info">Kamera belum aktif</span>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="card">
+                    <div class="card-title">📝 Log Absensi Real-time</div>
+                    <div class="attendance-log" id="live-attendance-log">
+                        <div class="empty-state"><p>Nyalakan kamera atau input manual untuk mulai absensi</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card" style="margin-top: 20px;">
+            <div class="card-title">⚙️ Pengaturan Absensi</div>
+            <div class="grid-3">
+                <div class="form-group">
+                    <label class="form-label">Batas Waktu Tepat Waktu</label>
+                    <input type="time" class="form-input" id="cutoffTime" value="07:30">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Tanggal Absensi</label>
+                    <input type="date" class="form-input" id="attendanceDate">
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Filter Kelas (Kamera)</label>
+                    <select class="form-select" id="attendanceFilter">
+                        <option value="all">Semua Kelas</option>
+                        <option value="X">Kelas X</option>
+                        <option value="XI">Kelas XI</option>
+                        <option value="XII">Kelas XII</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- DATA SISWA -->
+    <div id="page-siswa" class="page">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                <div class="card-title" style="margin-bottom: 0;">👥 Data Siswa</div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" onclick="openAddStudentModal()">➕ Tambah Siswa</button>
+                    <button class="btn btn-success" onclick="openRegisterFaceModal()">📷 Registrasi Wajah</button>
+                    <button class="btn btn-secondary" onclick="exportData()">📤 Export</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 Import</button>
+                    <input type="file" id="importFile" accept=".json" style="display:none;" onchange="importData(event)">
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-bar">
+            <input type="text" class="form-input" placeholder="🔍 Cari siswa..." id="searchStudent" oninput="renderStudents()">
+            <select class="form-select" id="filterClass" onchange="renderStudents()">
+                <option value="all">Semua Kelas</option>
+                <option value="X">Kelas X</option>
+                <option value="XI">Kelas XI</option>
+                <option value="XII">Kelas XII</option>
+            </select>
+            <select class="form-select" id="sortBy" onchange="renderStudents()">
+                <option value="name">Urutkan Nama</option>
+                <option value="class">Urutkan Kelas</option>
+                <option value="date">Urutkan Tanggal Daftar</option>
+            </select>
+        </div>
+
+        <div class="card">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Foto</th>
+                            <th>NIS</th>
+                            <th>Nama</th>
+                            <th>Kelas</th>
+                            <th>Jurusan</th>
+                            <th>Wajah</th>
+                            <th>Tgl Daftar</th>
+                            <th>Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="studentsTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIWAYAT -->
+    <div id="page-riwayat" class="page">
+        <div class="card">
+            <div class="card-title">📋 Riwayat Absensi</div>
+            <div class="filter-bar">
+                <input type="date" class="form-input" id="filterDate" onchange="renderAttendanceHistory()">
+                <select class="form-select" id="filterHistoryClass" onchange="renderAttendanceHistory()">
+                    <option value="all">Semua Kelas</option>
+                    <option value="X">Kelas X</option>
+                    <option value="XI">Kelas XI</option>
+                    <option value="XII">Kelas XII</option>
+                </select>
+                <select class="form-select" id="filterStatus" onchange="renderAttendanceHistory()">
+                    <option value="all">Semua Status</option>
+                    <option value="hadir">Hadir</option>
+                    <option value="terlambat">Terlambat</option>
+                    <option value="izin">Izin</option>
+                    <option value="sakit">Sakit</option>
+                </select>
+                <button class="btn btn-danger" onclick="clearAttendanceHistory()">🗑️ Hapus Riwayat</button>
+            </div>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-item hadir"><div class="count" id="hist-hadir">0</div><div class="label">Hadir</div></div>
+            <div class="summary-item terlambat"><div class="count" id="hist-terlambat">0</div><div class="label">Terlambat</div></div>
+            <div class="summary-item izin"><div class="count" id="hist-izin">0</div><div class="label">Izin</div></div>
+            <div class="summary-item sakit"><div class="count" id="hist-sakit">0</div><div class="label">Sakit</div></div>
+            <div class="summary-item" style="background:#f8fafc;"><div class="count" id="hist-total">0</div><div class="label">Total</div></div>
+        </div>
+
+        <div class="card">
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Waktu</th>
+                            <th>NIS</th>
+                            <th>Nama</th>
+                            <th>Kelas</th>
+                            <th>Jurusan</th>
+                            <th>Status</th>
+                            <th>Keterangan</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- LAPORAN -->
+    <div id="page-laporan" class="page">
+        <div class="card">
+            <div class="card-title">📈 Laporan Kehadiran</div>
+            <div class="filter-bar">
+                <select class="form-select" id="reportClass" onchange="generateReport()">
+                    <option value="all">Semua Kelas</option>
+                    <option value="X">Kelas X</option>
+                    <option value="XI">Kelas XI</option>
+                    <option value="XII">Kelas XII</option>
+                </select>
+                <input type="date" class="form-input" id="reportFrom" onchange="generateReport()">
+                <input type="date" class="form-input" id="reportTo" onchange="generateReport()">
+                <button class="btn btn-primary" onclick="generateReport()">📊 Generate</button>
+                <button class="btn btn-success" onclick="exportReport()">📤 Export CSV</button>
+            </div>
+        </div>
+        <div class="grid-2">
+            <div class="card">
+                <div class="card-title">📊 Statistik Per Kelas</div>
+                <div id="reportClassStats"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">📋 Detail Kehadiran</div>
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nama</th>
+                                <th>Kelas</th>
+                                <th>Hadir</th>
+                                <th>Terlambat</th>
+                                <th>Izin</th>
+                                <th>Sakit</th>
+                                <th>% Kehadiran</th>
+                            </tr>
+                        </thead>
+                        <tbody id="reportTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL TAMBAH SISWA -->
+<div class="modal-overlay" id="addStudentModal">
+    <div class="modal">
+        <div class="modal-title">➕ Tambah Siswa Baru</div>
+        <div class="form-group">
+            <label class="form-label">NIS (Nomor Induk Siswa)</label>
+            <input type="text" class="form-input" id="inputNIS" placeholder="Contoh: 2024001">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Nama Lengkap</label>
+            <input type="text" class="form-input" id="inputName" placeholder="Nama lengkap siswa">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Kelas</label>
+            <select class="form-select" id="inputClass">
+                <option value="X">X</option>
+                <option value="XI">XI</option>
+                <option value="XII">XII</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Jurusan</label>
+            <select class="form-select" id="inputMajor">
+                <option value="RPL">RPL</option><option value="TKJ">TKJ</option><option value="MM">MM</option>
+                <option value="TKR">TKR</option><option value="TBS">TBS</option><option value="AK">AK</option>
+                <option value="AP">AP</option><option value="BDP">BDP</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+            <button class="btn btn-secondary" onclick="closeModal('addStudentModal')">Batal</button>
+            <button class="btn btn-primary" onclick="addStudent()">💾 Simpan</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL REGISTRASI WAJAH -->
+<div class="modal-overlay" id="registerFaceModal">
+    <div class="modal" style="max-width: 600px;">
+        <div class="modal-title">📷 Registrasi Wajah Siswa</div>
+        <div class="form-group">
+            <label class="form-label">Pilih Siswa</label>
+            <select class="form-select" id="registerStudentSelect"></select>
+        </div>
+        <div class="capture-area" id="captureArea">
+            <video id="captureVideo" autoplay muted playsinline></video>
+            <canvas id="captureCanvas"></canvas>
+        </div>
+        <div style="font-size: 0.8rem; color: #64748b; margin-bottom: 12px;">Pastikan wajah terlihat jelas. Ambil 3-5 foto dari berbagai sudut.</div>
+        <div class="preview-grid" id="facePreviewGrid"></div>
+        <div style="display: flex; gap: 10px; justify-content: center; margin-top: 16px; flex-wrap: wrap;">
+            <button class="btn btn-primary" id="btnCapture" onclick="captureFace()" disabled>📸 Ambil Foto</button>
+            <button class="btn btn-success" id="btnSaveFaces" onclick="saveFaces()" disabled>💾 Simpan ke Database</button>
+            <button class="btn btn-danger" onclick="closeModal('registerFaceModal')">Batal</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL EDIT SISWA -->
+<div class="modal-overlay" id="editStudentModal">
+    <div class="modal">
+        <div class="modal-title">✏️ Edit Siswa</div>
+        <input type="hidden" id="editStudentId">
+        <div class="form-group">
+            <label class="form-label">NIS</label>
+            <input type="text" class="form-input" id="editNIS">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Nama Lengkap</label>
+            <input type="text" class="form-input" id="editName">
+        </div>
+        <div class="form-group">
+            <label class="form-label">Kelas</label>
+            <select class="form-select" id="editClass">
+                <option value="X">X</option><option value="XI">XI</option><option value="XII">XII</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Jurusan</label>
+            <select class="form-select" id="editMajor">
+                <option value="RPL">RPL</option><option value="TKJ">TKJ</option><option value="MM">MM</option>
+                <option value="TKR">TKR</option><option value="TBS">TBS</option><option value="AK">AK</option>
+                <option value="AP">AP</option><option value="BDP">BDP</option>
+            </select>
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+            <button class="btn btn-secondary" onclick="closeModal('editStudentModal')">Batal</button>
+            <button class="btn btn-primary" onclick="saveEditStudent()">💾 Simpan</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL INPUT IZIN/SAKIT -->
+<div class="modal-overlay" id="manualAttendanceModal">
+    <div class="modal">
+        <div class="modal-title">📝 Input Manual: Izin / Sakit</div>
+        <div class="form-group">
+            <label class="form-label">Pilih Siswa</label>
+            <select class="form-select" id="manualStudentSelect"></select>
+        </div>
+        <div class="grid-2">
+            <div class="form-group">
+                <label class="form-label">Tanggal</label>
+                <input type="date" class="form-input" id="manualDate">
+            </div>
+            <div class="form-group">
+                <label class="form-label">Waktu Input</label>
+                <input type="time" class="form-input" id="manualTime">
+            </div>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Status</label>
+            <select class="form-select" id="manualStatus">
+                <option value="Izin">Izin</option>
+                <option value="Sakit">Sakit</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label class="form-label">Keterangan (Opsional)</label>
+            <input type="text" class="form-input" id="manualNote" placeholder="Contoh: Demam tinggi, Acara keluarga, dll">
+        </div>
+        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px;">
+            <button class="btn btn-secondary" onclick="closeModal('manualAttendanceModal')">Batal</button>
+            <button class="btn btn-warning" onclick="submitManualAttendance()">✅ Simpan Absensi</button>
+        </div>
+    </div>
+</div>
+
+<div class="toast-container" id="toastContainer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+<script>
+let students = JSON.parse(localStorage.getItem('smk_students') || '[]');
+let attendanceRecords = JSON.parse(localStorage.getItem('smk_attendance') || '[]');
+let faceDescriptors = JSON.parse(localStorage.getItem('smk_face_descriptors') || '{}');
+let capturedFaceData = [];
+
+let videoStream = null;
+let cameraRunning = false;
+let detectionInterval = null;
+let captureStream = null;
+let modelsLoaded = false;
+let labeledDescriptors = [];
+let recognizedToday = new Set();
+let isSpeaking = false;
+
+document.addEventListener('DOMContentLoaded', () => {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('attendanceDate').value = today;
+    document.getElementById('filterDate').value = today;
+    document.getElementById('manualDate').value = today;
+    document.getElementById('reportFrom').value = today;
+    document.getElementById('reportTo').value = today;
+    
+    const now = new Date();
+    document.getElementById('manualTime').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    
+    updateDashboard();
+    renderStudents();
+    loadModels();
+});
+
+async function loadModels() {
+    const MODEL_URL = 'https://cdn.jsdelivr.net/gh/justadudewhohacks/face-api.js@master/weights';
+    try {
+        document.getElementById('model-progress').style.width = '33%';
+        document.getElementById('model-status-text').textContent = 'Memuat SSD Mobilenet V1...';
+        await faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL);
+        document.getElementById('model-progress').style.width = '66%';
+        document.getElementById('model-status-text').textContent = 'Memuat Face Landmark...';
+        await faceapi.nets.faceLandmark68Net.loadFromUri(MODEL_URL);
+        document.getElementById('model-progress').style.width = '90%';
+        document.getElementById('model-status-text').textContent = 'Memuat Face Recognition...';
+        await faceapi.nets.faceRecognitionNet.loadFromUri(MODEL_URL);
+        document.getElementById('model-progress').style.width = '100%';
+        document.getElementById('model-status-dot').className = 'status-dot active';
+        document.getElementById('model-status-text').textContent = 'Model Siap';
+        document.getElementById('model-status-desc').textContent = 'Semua model berhasil dimuat';
+        modelsLoaded = true;
+        rebuildFaceDatabase();
+        showToast('Model face recognition berhasil dimuat!', 'success');
+    } catch (err) {
+        console.error(err);
+        document.getElementById('model-status-dot').className = 'status-dot inactive';
+        document.getElementById('model-status-text').textContent = 'Gagal memuat model';
+        document.getElementById('model-status-desc').textContent = err.message;
+        showToast('Gagal memuat model: ' + err.message, 'error');
+    }
+}
+
+function rebuildFaceDatabase() {
+    labeledDescriptors = [];
+    Object.keys(faceDescriptors).forEach(studentId => {
+        const student = students.find(s => s.id === studentId);
+        if (student && faceDescriptors[studentId] && faceDescriptors[studentId].length > 0) {
+            const descriptors = faceDescriptors[studentId].map(d => new Float32Array(d));
+            labeledDescriptors.push(new faceapi.LabeledFaceDescriptors(studentId, descriptors));
+        }
+    });
+    document.getElementById('face-db-count').textContent = labeledDescriptors.length;
+    document.getElementById('registered-count').textContent = students.length;
+}
+
+function showPage(pageName) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+    document.getElementById('page-' + pageName).classList.add('active');
+    event.target.classList.add('active');
+    if (pageName === 'dashboard') updateDashboard();
+    if (pageName === 'riwayat') renderAttendanceHistory();
+    if (pageName === 'laporan') generateReport();
+}
+
+function showToast(message, type = 'info') {
+    const container = document.getElementById('toastContainer');
+    const toast = document.createElement('div');
+    toast.className = `toast ${type}`;
+    toast.textContent = message;
+    container.appendChild(toast);
+    setTimeout(() => toast.remove(), 4000);
+}
+
+function openModal(id) { document.getElementById(id).classList.add('active'); }
+function closeModal(id) {
+    document.getElementById(id).classList.remove('active');
+    if (id === 'registerFaceModal' && captureStream) {
+        captureStream.getTracks().forEach(t => t.stop());
+        captureStream = null;
+    }
+}
+
+// Student Management
+function openAddStudentModal() {
+    document.getElementById('inputNIS').value = '';
+    document.getElementById('inputName').value = '';
+    openModal('addStudentModal');
+}
+
+function addStudent() {
+    const nis = document.getElementById('inputNIS').value.trim();
+    const name = document.getElementById('inputName').value.trim();
+    const kelas = document.getElementById('inputClass').value;
+    const major = document.getElementById('inputMajor').value;
+    if (!nis || !name) { showToast('NIS dan Nama harus diisi!', 'error'); return; }
+    if (students.find(s => s.nis === nis)) { showToast('NIS sudah terdaftar!', 'error'); return; }
+    const student = { id: 'STU_' + Date.now(), nis, name, kelas, major, createdAt: new Date().toISOString(), registeredDate: new Date().toISOString().split('T')[0] };
+    students.push(student);
+    saveStudents();
+    renderStudents();
+    closeModal('addStudentModal');
+    updateDashboard();
+    showToast(`Siswa "${name}" berhasil ditambahkan!`, 'success');
+}
+
+function renderStudents() {
+    const search = document.getElementById('searchStudent').value.toLowerCase();
+    const filterClass = document.getElementById('filterClass').value;
+    const sortBy = document.getElementById('sortBy').value;
+    let filtered = students.filter(s => {
+        const matchSearch = s.name.toLowerCase().includes(search) || s.nis.includes(search);
+        const matchClass = filterClass === 'all' || s.kelas === filterClass;
+        return matchSearch && matchClass;
+    });
+    filtered.sort((a, b) => {
+        if (sortBy === 'name') return a.name.localeCompare(b.name);
+        if (sortBy === 'class') return (a.kelas + a.major).localeCompare(b.kelas + b.major);
+        if (sortBy === 'date') return new Date(b.createdAt) - new Date(a.createdAt);
+        return 0;
+    });
+    const tbody = document.getElementById('studentsTableBody');
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:40px; color:#94a3b8;">Tidak ada data siswa</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = filtered.map(s => {
+        const hasFace = faceDescriptors[s.id] && faceDescriptors[s.id].length > 0;
+        const badgeClass = s.kelas === 'X' ? 'badge-x' : s.kelas === 'XI' ? 'badge-xi' : 'badge-xii';
+        return `
+            <tr>
+                <td><div class="log-avatar">${s.name.charAt(0).toUpperCase()}</div></td>
+                <td><strong>${s.nis}</strong></td>
+                <td>${s.name}</td>
+                <td><span class="badge ${badgeClass}">${s.kelas}</span></td>
+                <td>${s.major}</td>
+                <td>${hasFace ? '<span style="color:#10b981;font-weight:600;">✅ Terdaftar</span>' : '<span style="color:#ef4444;font-weight:600;">❌ Belum</span>'}</td>
+                <td>${s.registeredDate || '-'}</td>
+                <td>
+                    <button class="btn btn-secondary" style="padding:6px 12px;font-size:0.75rem;" onclick="editStudent('${s.id}')">✏️</button>
+                    <button class="btn btn-danger" style="padding:6px 12px;font-size:0.75rem;" onclick="deleteStudent('${s.id}')">🗑️</button>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function editStudent(id) {
+    const s = students.find(st => st.id === id);
+    if (!s) return;
+    document.getElementById('editStudentId').value = id;
+    document.getElementById('editNIS').value = s.nis;
+    document.getElementById('editName').value = s.name;
+    document.getElementById('editClass').value = s.kelas;
+    document.getElementById('editMajor').value = s.major;
+    openModal('editStudentModal');
+}
+
+function saveEditStudent() {
+    const id = document.getElementById('editStudentId').value;
+    const s = students.find(st => st.id === id);
+    if (!s) return;
+    const newNis = document.getElementById('editNIS').value.trim();
+    if (newNis !== s.nis && students.find(st => st.nis === newNis)) { showToast('NIS sudah digunakan siswa lain!', 'error'); return; }
+    s.nis = newNis;
+    s.name = document.getElementById('editName').value.trim();
+    s.kelas = document.getElementById('editClass').value;
+    s.major = document.getElementById('editMajor').value;
+    saveStudents();
+    renderStudents();
+    closeModal('editStudentModal');
+    showToast('Data siswa berhasil diperbarui!', 'success');
+}
+
+function deleteStudent(id) {
+    if (!confirm('Yakin ingin menghapus siswa ini?')) return;
+    students = students.filter(s => s.id !== id);
+    delete faceDescriptors[id];
+    saveStudents();
+    saveFaceDescriptors();
+    renderStudents();
+    updateDashboard();
+    rebuildFaceDatabase();
+    showToast('Siswa berhasil dihapus', 'info');
+}
+
+function saveStudents() { localStorage.setItem('smk_students', JSON.stringify(students)); }
+function saveFaceDescriptors() { localStorage.setItem('smk_face_descriptors', JSON.stringify(faceDescriptors)); }
+function saveAttendance() { localStorage.setItem('smk_attendance', JSON.stringify(attendanceRecords)); }
+
+// Face Registration
+function openRegisterFaceModal() {
+    if (!modelsLoaded) { showToast('Model belum siap, mohon tunggu...', 'error'); return; }
+    if (students.length === 0) { showToast('Belum ada data siswa. Tambah siswa terlebih dahulu.', 'error'); return; }
+    const select = document.getElementById('registerStudentSelect');
+    select.innerHTML = '<option value="">-- Pilih Siswa --</option>' +
+        students.map(s => `<option value="${s.id}">${s.nis} - ${s.name} (${s.kelas})</option>`).join('');
+    capturedFaceData = [];
+    document.getElementById('facePreviewGrid').innerHTML = '';
+    document.getElementById('btnCapture').disabled = true;
+    document.getElementById('btnSaveFaces').disabled = true;
+    startCaptureCamera();
+    openModal('registerFaceModal');
+}
+
+async function startCaptureCamera() {
+    try {
+        captureStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+        document.getElementById('captureVideo').srcObject = captureStream;
+        document.getElementById('btnCapture').disabled = false;
+    } catch (err) { showToast('Gagal mengakses kamera: ' + err.message, 'error'); }
+}
+
+async function captureFace() {
+    const video = document.getElementById('captureVideo');
+    const canvas = document.getElementById('captureCanvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const detection = await faceapi.detectSingleFace(video).withFaceLandmarks().withFaceDescriptor();
+    if (!detection) { showToast('Wajah tidak terdeteksi. Pastikan wajah terlihat jelas.', 'error'); return; }
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+    capturedFaceData.push(Array.from(detection.descriptor));
+    const previewGrid = document.getElementById('facePreviewGrid');
+    const img = document.createElement('img');
+    img.className = 'preview-img';
+    img.src = canvas.toDataURL();
+    img.style.border = '2px solid #10b981';
+    previewGrid.appendChild(img);
+    document.getElementById('btnSaveFaces').disabled = capturedFaceData.length < 2;
+    showToast(`Foto ke-${capturedFaceData.length} berhasil diambil! (${capturedFaceData.length}/5)`, 'success');
+    if (capturedFaceData.length >= 5) showToast('Sudah cukup 5 foto. Silakan simpan.', 'info');
+}
+
+function saveFaces() {
+    const studentId = document.getElementById('registerStudentSelect').value;
+    if (!studentId || capturedFaceData.length === 0) { showToast('Pilih siswa dan ambil foto terlebih dahulu!', 'error'); return; }
+    if (!faceDescriptors[studentId]) faceDescriptors[studentId] = [];
+    faceDescriptors[studentId] = capturedFaceData;
+    saveFaceDescriptors();
+    rebuildFaceDatabase();
+    closeModal('registerFaceModal');
+    if (captureStream) { captureStream.getTracks().forEach(t => t.stop()); captureStream = null; }
+    renderStudents();
+    updateDashboard();
+    showToast(`Wajah berhasil didaftarkan untuk siswa! (${capturedFaceData.length} foto)`, 'success');
+}
+
+// Camera & Recognition
+async function startCamera() {
+    if (!modelsLoaded) { showToast('Model belum siap!', 'error'); return; }
+    if (labeledDescriptors.length === 0) { showToast('Belum ada siswa terdaftar wajahnya!', 'error'); return; }
+    try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: 640, height: 480 } });
+        const video = document.getElementById('cameraVideo');
+        video.srcObject = videoStream;
+        cameraRunning = true;
+        document.getElementById('btnStartCamera').disabled = true;
+        document.getElementById('btnStopCamera').disabled = false;
+        document.getElementById('camera-status-dot').className = 'status-dot active';
+        document.getElementById('camera-status-text').textContent = 'Kamera Aktif';
+        document.getElementById('scanLine').style.display = 'block';
+        await video.play();
+        startDetection();
+        showToast('Kamera aktif! Sistem absensi berjalan.', 'success');
+    } catch (err) { showToast('Gagal mengakses kamera: ' + err.message, 'error'); }
+}
+
+function stopCamera() {
+    cameraRunning = false;
+    if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
+    if (detectionInterval) { clearInterval(detectionInterval); detectionInterval = null; }
+    const canvas = document.getElementById('cameraCanvas');
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    document.getElementById('btnStartCamera').disabled = false;
+    document.getElementById('btnStopCamera').disabled = true;
+    document.getElementById('camera-status-dot').className = 'status-dot inactive';
+    document.getElementById('camera-status-text').textContent = 'Kamera Mati';
+    document.getElementById('scanLine').style.display = 'none';
+    document.getElementById('detection-info').textContent = 'Kamera dihentikan';
+    showToast('Kamera dihentikan.', 'info');
+}
+
+function startDetection() {
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.getElementById('cameraCanvas');
+    const ctx = canvas.getContext('2d');
+    const cutoffTime = document.getElementById('cutoffTime').value;
+    const filterClass = document.getElementById('attendanceFilter').value;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const faceMatcher = labeledDescriptors.length > 0 ? new faceapi.FaceMatcher(labeledDescriptors, 0.6) : null;
+    
+    detectionInterval = setInterval(async () => {
+        if (!cameraRunning) return;
+        const detections = await faceapi.detectAllFaces(video).withFaceLandmarks().withFaceDescriptors();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (detections.length === 0) {
+            document.getElementById('detection-info').textContent = 'Mendeteksi... Tidak ada wajah';
+            return;
+        }
+        document.getElementById('detection-info').textContent = `Mendeteksi ${detections.length} wajah`;
+        detections.forEach(detection => {
+            const box = detection.detection.box;
+            let label = 'Tidak Dikenal';
+            let color = '#ef4444';
+            if (faceMatcher) {
+                const bestMatch = faceMatcher.findBestMatch(detection.descriptor);
+                if (bestMatch.label !== 'unknown') {
+                    const student = students.find(s => s.id === bestMatch.label);
+                    if (student) {
+                        if (filterClass === 'all' || student.kelas === filterClass) {
+                            label = student.name;
+                            color = '#10b981';
+                            if (!recognizedToday.has(student.id)) {
+                                recognizedToday.add(student.id);
+                                markAttendance(student, cutoffTime);
+                            }
+                        } else {
+                            label = `[${student.kelas}] ${student.name} (diabaikan)`;
+                            color = '#f59e0b';
+                        }
+                    }
+                }
+            }
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 3;
+            ctx.strokeRect(box.x, box.y, box.width, box.height);
+            ctx.fillStyle = color;
+            const textWidth = ctx.measureText(label).width;
+            ctx.fillRect(box.x, box.y - 28 - 4, Math.max(textWidth + 16, box.width), 28);
+            ctx.fillStyle = '#fff';
+            ctx.font = 'bold 13px Inter';
+            ctx.fillText(label, box.x + 8, box.y - 10);
+        });
+    }, 300);
+}
+
+// VOICE FUNCTION
+function speak(text) {
+    const soundEnabled = document.getElementById('soundToggle').checked;
+    if (!soundEnabled) return;
+    
+    if ('speechSynthesis' in window) {
+        // Cancel current speech to queue new one or wait
+        window.speechSynthesis.cancel();
+        
+        const utterance = new SpeechSynthesisUtterance(text);
+        utterance.lang = 'id-ID'; // Indonesian
+        utterance.rate = 0.9;
+        utterance.pitch = 1;
+        window.speechSynthesis.speak(utterance);
+    }
+}
+
+function markAttendance(student, cutoffTime) {
+    const today = document.getElementById('attendanceDate').value;
+    const now = new Date();
+    const timeStr = now.toTimeString().slice(0, 5);
+    const isLate = timeStr > cutoffTime;
+    const status = isLate ? 'Terlambat' : 'Hadir';
+    
+    const record = { 
+        id: 'ATT_' + Date.now(), 
+        studentId: student.id, 
+        nis: student.nis, 
+        name: student.name, 
+        kelas: student.kelas, 
+        major: student.major, 
+        date: today, 
+        time: timeStr, 
+        status: status, 
+        note: '', 
+        timestamp: now.toISOString() 
+    };
+    
+    attendanceRecords.push(record);
+    saveAttendance();
+    updateLiveLog(record);
+    updateDashboard();
+    
+    // Trigger Sound
+    if (isLate) {
+        speak(`Maaf ${student.name}, Anda terlambat`);
+    } else {
+        speak(`Selamat ${student.name}, Anda tepat waktu.`);
+    }
+}
+
+// Manual Attendance (Izin/Sakit)
+function openManualAttendanceModal() {
+    if (students.length === 0) { showToast('Belum ada data siswa.', 'error'); return; }
+    const today = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    document.getElementById('manualDate').value = document.getElementById('attendanceDate').value || today;
+    document.getElementById('manualTime').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+    document.getElementById('manualStatus').value = 'Izin';
+    document.getElementById('manualNote').value = '';
+    
+    const select = document.getElementById('manualStudentSelect');
+    select.innerHTML = '<option value="">-- Pilih Siswa --</option>' +
+        students.map(s => `<option value="${s.id}">${s.nis} - ${s.name} (${s.kelas})</option>`).join('');
+    
+    openModal('manualAttendanceModal');
+}
+
+function submitManualAttendance() {
+    const studentId = document.getElementById('manualStudentSelect').value;
+    const date = document.getElementById('manualDate').value;
+    const time = document.getElementById('manualTime').value;
+    const status = document.getElementById('manualStatus').value;
+    const note = document.getElementById('manualNote').value.trim();
+    
+    if (!studentId || !date || !time) { showToast('Semua field wajib diisi!', 'error'); return; }
+    
+    const student = students.find(s => s.id === studentId);
+    if (!student) return;
+    
+    const record = {
+        id: 'ATT_' + Date.now(),
+        studentId: student.id,
+        nis: student.nis,
+        name: student.name,
+        kelas: student.kelas,
+        major: student.major,
+        date: date,
+        time: time,
+        status: status,
+        note: note,
+        timestamp: new Date().toISOString()
+    };
+    
+    attendanceRecords.push(record);
+    saveAttendance();
+    updateLiveLog(record);
+    updateDashboard();
+    closeModal('manualAttendanceModal');
+    showToast(`📝 ${student.name} berhasil dicatat ${status} (${time})`, 'warning');
+}
+
+function updateLiveLog(record) {
+    const log = document.getElementById('live-attendance-log');
+    if (log.querySelector('.empty-state')) log.innerHTML = '';
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    const badgeClass = record.status === 'Hadir' ? 'badge-hadir' : record.status === 'Terlambat' ? 'badge-terlambat' : record.status === 'Izin' ? 'badge-izin' : 'badge-sakit';
+    item.innerHTML = `
+        <div class="log-avatar">${record.name.charAt(0).toUpperCase()}</div>
+        <div class="log-info">
+            <div class="log-name">${record.name}</div>
+            <div class="log-time">${record.kelas} ${record.major} • ${record.time}
+                ${record.note ? `<div class="notes-text">📝 ${record.note}</div>` : ''}
+            </div>
+        </div>
+        <span class="badge ${badgeClass}">${record.status}</span>
+    `;
+    log.insertBefore(item, log.firstChild);
+}
+
+// Dashboard
+function updateDashboard() {
+    const today = document.getElementById('attendanceDate')?.value || new Date().toISOString().split('T')[0];
+    const todayRecords = attendanceRecords.filter(r => r.date === today);
+    const hadir = todayRecords.filter(r => r.status === 'Hadir').length;
+    const terlambat = todayRecords.filter(r => r.status === 'Terlambat').length;
+    const izin = todayRecords.filter(r => r.status === 'Izin').length;
+    const sakit = todayRecords.filter(r => r.status === 'Sakit').length;
+    
+    document.getElementById('stat-total').textContent = students.length;
+    document.getElementById('stat-hadir').textContent = hadir;
+    document.getElementById('stat-terlambat').textContent = terlambat;
+    document.getElementById('stat-izin').textContent = izin;
+    document.getElementById('stat-sakit').textContent = sakit;
+    document.getElementById('stat-belum').textContent = Math.max(0, students.length - hadir - terlambat - izin - sakit);
+    document.getElementById('registered-count').textContent = students.length;
+    document.getElementById('face-db-count').textContent = labeledDescriptors.length;
+    
+    const log = document.getElementById('today-attendance-log');
+    if (todayRecords.length === 0) {
+        log.innerHTML = '<div class="empty-state"><p>Belum ada absensi hari ini</p></div>';
+    } else {
+        log.innerHTML = todayRecords.sort((a, b) => b.time.localeCompare(a.time)).map(r => {
+            const badgeClass = r.status === 'Hadir' ? 'badge-hadir' : r.status === 'Terlambat' ? 'badge-terlambat' : r.status === 'Izin' ? 'badge-izin' : 'badge-sakit';
+            return `
+                <div class="log-item">
+                    <div class="log-avatar">${r.name.charAt(0).toUpperCase()}</div>
+                    <div class="log-info">
+                        <div class="log-name">${r.name}</div>
+                        <div class="log-time">${r.kelas} ${r.major} • ${r.time}
+                            ${r.note ? `<div class="notes-text">📝 ${r.note}</div>` : ''}
+                        </div>
+                    </div>
+                    <span class="badge ${badgeClass}">${r.status}</span>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    const distContainer = document.getElementById('class-distribution');
+    const classes = ['X', 'XI', 'XII'];
+    distContainer.innerHTML = classes.map(cls => {
+        const total = students.filter(s => s.kelas === cls).length;
+        const hadirCount = todayRecords.filter(r => r.kelas === cls).length;
+        const pct = total > 0 ? Math.round((hadirCount / total) * 100) : 0;
+        const badgeClass = cls === 'X' ? 'badge-x' : cls === 'XI' ? 'badge-xi' : 'badge-xii';
+        return `
+            <div style="margin-bottom: 16px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom:6px;">
+                    <span class="badge ${badgeClass}">Kelas ${cls}</span>
+                    <span style="font-size:0.8rem; font-weight:600;">${hadirCount}/${total} (${pct}%)</span>
+                </div>
+                <div class="progress-bar"><div class="progress-fill" style="width: ${pct}%"></div></div>
+            </div>
+        `;
+    }).join('');
+}
+
+// History
+function renderAttendanceHistory() {
+    const filterDate = document.getElementById('filterDate').value;
+    const filterClass = document.getElementById('filterHistoryClass').value;
+    const filterStatus = document.getElementById('filterStatus').value;
+    let filtered = attendanceRecords.filter(r => {
+        const matchDate = !filterDate || r.date === filterDate;
+        const matchClass = filterClass === 'all' || r.kelas === filterClass;
+        const matchStatus = filterStatus === 'all' || r.status.toLowerCase() === filterStatus;
+        return matchDate && matchClass && matchStatus;
+    });
+    filtered.sort((a, b) => b.time.localeCompare(a.time));
+    
+    document.getElementById('hist-hadir').textContent = filtered.filter(r => r.status === 'Hadir').length;
+    document.getElementById('hist-terlambat').textContent = filtered.filter(r => r.status === 'Terlambat').length;
+    document.getElementById('hist-izin').textContent = filtered.filter(r => r.status === 'Izin').length;
+    document.getElementById('hist-sakit').textContent = filtered.filter(r => r.status === 'Sakit').length;
+    document.getElementById('hist-total').textContent = filtered.length;
+    
+    const tbody = document.getElementById('historyTableBody');
+    if (filtered.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#94a3b8;">Tidak ada data</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = filtered.map(r => {
+        const badgeClass = r.status === 'Hadir' ? 'badge-hadir' : r.status === 'Terlambat' ? 'badge-terlambat' : r.status === 'Izin' ? 'badge-izin' : 'badge-sakit';
+        const kelasBadge = r.kelas === 'X' ? 'badge-x' : r.kelas === 'XI' ? 'badge-xi' : 'badge-xii';
+        return `
+            <tr>
+                <td><strong>${r.time}</strong><br><span style="font-size:0.75rem;color:#94a3b8;">${r.date}</span></td>
+                <td>${r.nis}</td>
+                <td>${r.name}</td>
+                <td><span class="badge ${kelasBadge}">${r.kelas}</span></td>
+                <td>${r.major}</td>
+                <td><span class="badge ${badgeClass}">${r.status}</span></td>
+                <td>${r.note || '-'}</td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function clearAttendanceHistory() {
+    if (!confirm('Yakin ingin menghapus semua riwayat absensi?')) return;
+    attendanceRecords = [];
+    recognizedToday.clear();
+    saveAttendance();
+    renderAttendanceHistory();
+    updateDashboard();
+    showToast('Riwayat absensi berhasil dihapus', 'info');
+}
+
+// Reports
+function generateReport() {
+    const reportClass = document.getElementById('reportClass').value;
+    const from = document.getElementById('reportFrom').value;
+    const to = document.getElementById('reportTo').value;
+    let filtered = attendanceRecords.filter(r => {
+        const matchClass = reportClass === 'all' || r.kelas === reportClass;
+        const matchDate = (!from || r.date >= from) && (!to || r.date <= to);
+        return matchClass && matchDate;
+    });
+    
+    const classes = ['X', 'XI', 'XII'];
+    const classStats = classes.map(cls => {
+        const clsRecords = filtered.filter(r => r.kelas === cls);
+        const hadir = clsRecords.filter(r => r.status === 'Hadir').length;
+        const terlambat = clsRecords.filter(r => r.status === 'Terlambat').length;
+        const total = clsRecords.length;
+        const badgeClass = cls === 'X' ? 'badge-x' : cls === 'XI' ? 'badge-xi' : 'badge-xii';
+        return { cls, hadir, terlambat, total, badgeClass };
+    });
+    
+    document.getElementById('reportClassStats').innerHTML = classStats.map(c => `
+        <div style="margin-bottom: 16px; padding: 16px; background: #f8fafc; border-radius: 12px;">
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                <span class="badge ${c.badgeClass}">Kelas ${c.cls}</span>
+                <span style="font-size:0.85rem; font-weight:700;">${c.total} absensi</span>
+            </div>
+            <div style="display:flex; gap:12px; font-size:0.8rem; flex-wrap: wrap;">
+                <span style="color:#10b981;">✅ Hadir: ${c.hadir}</span>
+                <span style="color:#f59e0b;">⏰ Terlambat: ${c.terlambat}</span>
+            </div>
+        </div>
+    `).join('');
+    
+    const studentStats = {};
+    filtered.forEach(r => {
+        if (!studentStats[r.studentId]) {
+            studentStats[r.studentId] = { name: r.name, kelas: r.kelas, major: r.major, hadir: 0, terlambat: 0, izin: 0, sakit: 0, total: 0 };
+        }
+        studentStats[r.studentId].total++;
+        if (r.status === 'Hadir') studentStats[r.studentId].hadir++;
+        if (r.status === 'Terlambat') studentStats[r.studentId].terlambat++;
+        if (r.status === 'Izin') studentStats[r.studentId].izin++;
+        if (r.status === 'Sakit') studentStats[r.studentId].sakit++;
+    });
+    
+    const tbody = document.getElementById('reportTableBody');
+    const statsArr = Object.values(studentStats);
+    if (statsArr.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:40px; color:#94a3b8;">Tidak ada data</td></tr>`;
+        return;
+    }
+    tbody.innerHTML = statsArr.map(s => {
+        const hadirPct = s.total > 0 ? Math.round((s.hadir / s.total) * 100) : 0;
+        const kelasBadge = s.kelas === 'X' ? 'badge-x' : s.kelas === 'XI' ? 'badge-xi' : 'badge-xii';
+        return `
+            <tr>
+                <td><strong>${s.name}</strong></td>
+                <td><span class="badge ${kelasBadge}">${s.kelas}</span></td>
+                <td>${s.hadir}</td>
+                <td>${s.terlambat}</td>
+                <td>${s.izin}</td>
+                <td>${s.sakit}</td>
+                <td>
+                    <div style="display:flex; align-items:center; gap:8px;">
+                        <div class="progress-bar" style="width:80px;">
+                            <div class="progress-fill" style="width: ${hadirPct}%; background: ${hadirPct >= 80 ? '#10b981' : hadirPct >= 60 ? '#f59e0b' : '#ef4444'};"></div>
+                        </div>
+                        <span style="font-weight:700; font-size:0.85rem;">${hadirPct}%</span>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+}
+
+function exportReport() {
+    const reportClass = document.getElementById('reportClass').value;
+    const from = document.getElementById('reportFrom').value;
+    const to = document.getElementById('reportTo').value;
+    let filtered = attendanceRecords.filter(r => {
+        const matchClass = reportClass === 'all' || r.kelas === reportClass;
+        const matchDate = (!from || r.date >= from) && (!to || r.date <= to);
+        return matchClass && matchDate;
+    });
+    let csv = 'Waktu,Tanggal,NIS,Nama,Kelas,Jurusan,Status,Keterangan\n';
+    filtered.forEach(r => {
+        csv += `${r.time},${r.date},${r.nis},"${r.name}",${r.kelas},${r.major},${r.status},"${r.note || ''}"\n`;
+    });
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `laporan_absensi_${from}_${to}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Laporan berhasil di-export!', 'success');
+}
+
+function exportData() {
+    const data = { students, faceDescriptors, attendanceRecords, exportDate: new Date().toISOString() };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backup_absensi_smk_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('Data berhasil di-export!', 'success');
+}
+
+function importData(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        try {
+            const data = JSON.parse(e.target.result);
+            if (data.students) { students = data.students; saveStudents(); }
+            if (data.faceDescriptors) { faceDescriptors = data.faceDescriptors; saveFaceDescriptors(); }
+            if (data.attendanceRecords) { attendanceRecords = data.attendanceRecords; saveAttendance(); }
+            rebuildFaceDatabase();
+            renderStudents();
+            updateDashboard();
+            showToast('Data berhasil di-import!', 'success');
+        } catch (err) { showToast('File tidak valid!', 'error'); }
+    };
+    reader.readAsText(file);
+    event.target.value = '';
+}
+
+setInterval(() => {
+    const today = new Date().toISOString().split('T')[0];
+    if (document.getElementById('attendanceDate').value !== today) { recognizedToday.clear(); }
+}, 60000);
+</script>
+</body>
+</html>
